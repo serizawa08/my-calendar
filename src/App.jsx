@@ -64,7 +64,7 @@ export default function UnifiedCalendar() {
     document.body.appendChild(script);
   }, []);
 
-  // カレンダーイベント取得
+  // カレンダーイベント取得（全カレンダー）
   const fetchEvents = useCallback(async (token) => {
     setLoading(true);
     try {
@@ -72,29 +72,48 @@ export default function UnifiedCalendar() {
       const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
       const end = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString();
 
-      const res = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${start}&timeMax=${end}&singleEvents=true&orderBy=startTime&maxResults=200`,
+      // まず全カレンダーのリストを取得
+      const calListRes = await fetch(
+        "https://www.googleapis.com/calendar/v3/users/me/calendarList",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const data = await res.json();
+      const calListData = await calListRes.json();
+      const calendars = calListData.items || [];
 
-      const mapped = (data.items || []).map((item) => {
-        const start = item.start?.date || item.start?.dateTime;
-        const date = start ? start.substring(0, 10) : null;
-        const time = item.start?.dateTime
-          ? new Date(item.start.dateTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) +
-            "〜" +
-            new Date(item.end.dateTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
-          : null;
-        return {
-          id: item.id,
-          date,
-          title: item.summary || "(タイトルなし)",
-          type: "event",
-          allDay: !item.start?.dateTime,
-          time,
-        };
-      });
+      // 全カレンダーからイベントを並行取得
+      const allEvents = await Promise.all(
+        calendars.map(async (cal) => {
+          try {
+            const res = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?timeMin=${start}&timeMax=${end}&singleEvents=true&orderBy=startTime&maxResults=200`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const data = await res.json();
+            const isHoliday = cal.summary?.includes("祝日") || cal.id?.includes("holiday");
+            return (data.items || []).map((item) => {
+              const startVal = item.start?.date || item.start?.dateTime;
+              const date = startVal ? startVal.substring(0, 10) : null;
+              const time = item.start?.dateTime
+                ? new Date(item.start.dateTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) +
+                  "〜" +
+                  new Date(item.end.dateTime).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
+                : null;
+              return {
+                id: item.id + cal.id,
+                date,
+                title: item.summary || "(タイトルなし)",
+                type: isHoliday ? "holiday" : "event",
+                allDay: !item.start?.dateTime,
+                time,
+              };
+            });
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      const mapped = allEvents.flat();
       setEvents(mapped);
     } catch (e) {
       console.error(e);
