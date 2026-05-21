@@ -42,7 +42,7 @@ export default function UnifiedCalendar() {
   const [tokenClient, setTokenClient] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
 
-  // Google Identity Services の読み込み
+  // Google Identity Services の読み込み＆自動ログイン
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
@@ -60,6 +60,8 @@ export default function UnifiedCalendar() {
         },
       });
       setTokenClient(client);
+      // promptなしで自動トークン取得を試みる（既にGoogleにログイン済みなら自動でOK）
+      client.requestAccessToken({ prompt: "" });
     };
     document.body.appendChild(script);
   }, []);
