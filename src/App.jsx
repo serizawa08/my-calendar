@@ -372,4 +372,65 @@ export default function UnifiedCalendar() {
             borderRadius: "8px", padding: "7px 14px", fontSize: "13px",
             fontWeight: "700", cursor: "pointer",
           }}>追加</button>
-        </
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+          {reminders.map(r => (
+            <div key={r.id} style={{
+              display: "flex", alignItems: "center", gap: "8px", background: "#f9f9fb",
+              borderRadius: "8px", padding: "8px 10px",
+              opacity: r.done ? 0.4 : 1, transition: "opacity 0.2s",
+              borderLeft: `3px solid ${r.done ? "#ccc" : "#d97706"}`,
+            }}>
+              {/* チェックボックス */}
+              <div onClick={() => toggleReminder(r.id)} style={{
+                width: "18px", height: "18px", borderRadius: "50%", flexShrink: 0,
+                border: `2px solid ${r.done ? "#ccc" : "#d97706"}`,
+                background: r.done ? "#ccc" : "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              }}>
+                {r.done && <span style={{ fontSize: "10px", color: "#fff" }}>✓</span>}
+              </div>
+
+              {/* タイトル or 編集フォーム */}
+              {editingId === r.id ? (
+                <input
+                  value={editingText}
+                  onChange={e => setEditingText(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && saveEdit(r.id)}
+                  autoFocus
+                  style={{
+                    flex: 1, padding: "2px 6px", fontSize: "13px",
+                    border: "1px solid #d97706", borderRadius: "6px", outline: "none",
+                  }}
+                />
+              ) : (
+                <span style={{ flex: 1, fontSize: "13px", textDecoration: r.done ? "line-through" : "none", color: r.done ? "#aaa" : "#1a1a2e" }}>
+                  {r.title}
+                </span>
+              )}
+
+              {/* 編集・削除ボタン */}
+              {editingId === r.id ? (
+                <button onClick={() => saveEdit(r.id)} style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: "6px", padding: "3px 8px", fontSize: "11px", cursor: "pointer" }}>保存</button>
+              ) : (
+                <button onClick={() => startEdit(r)} style={{ background: "transparent", color: "#aaa", border: "none", fontSize: "14px", cursor: "pointer", padding: "0 2px" }}>✎</button>
+              )}
+              <button onClick={() => deleteReminder(r.id)} style={{ background: "transparent", color: "#ccc", border: "none", fontSize: "16px", cursor: "pointer", padding: "0 2px" }}>×</button>
+            </div>
+          ))}
+        </div>
+        {reminders.length === 0 && (
+          <div style={{ fontSize: "13px", color: "#aaa", textAlign: "center", padding: "8px" }}>リマインダーなし</div>
+        )}
+        <div style={{ fontSize: "10px", color: "#bbb", marginTop: "10px", textAlign: "center" }}>タップで完了/未完了を切替 ✎で編集 ×で削除</div>
+      </div>
+    </div>
+  );
+}
+
+const navBtnStyle = {
+  background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)", color: "#1a1a2e",
+  borderRadius: "8px", width: "32px", height: "32px", fontSize: "18px", cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
+};
