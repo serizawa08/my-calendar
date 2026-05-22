@@ -35,6 +35,9 @@ export default function UnifiedCalendar() {
     `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
   );
   const [reminders, setReminders] = useState(REMINDERS);
+  const [newReminder, setNewReminder] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editingText, setEditingText] = useState("");
   const [showLegend, setShowLegend] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [events, setEvents] = useState([]);
@@ -165,6 +168,29 @@ export default function UnifiedCalendar() {
 
   const toggleReminder = (id) => {
     setReminders(prev => prev.map(r => r.id === id ? { ...r, done: !r.done } : r));
+  };
+
+  const addReminder = () => {
+    if (!newReminder.trim()) return;
+    const id = "r" + Date.now();
+    setReminders(prev => [...prev, { id, title: newReminder.trim(), done: false }]);
+    setNewReminder("");
+  };
+
+  const deleteReminder = (id) => {
+    setReminders(prev => prev.filter(r => r.id !== id));
+  };
+
+  const startEdit = (r) => {
+    setEditingId(r.id);
+    setEditingText(r.title);
+  };
+
+  const saveEdit = (id) => {
+    if (!editingText.trim()) return;
+    setReminders(prev => prev.map(r => r.id === id ? { ...r, title: editingText.trim() } : r));
+    setEditingId(null);
+    setEditingText("");
   };
 
   const cells = [];
@@ -327,34 +353,23 @@ export default function UnifiedCalendar() {
         <div style={{ fontSize: "13px", fontWeight: "700", color: "#d97706", marginBottom: "10px" }}>
           ✅ リマインダー ({reminders.filter(r => !r.done).length}件)
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-          {reminders.map(r => (
-            <div key={r.id} onClick={() => toggleReminder(r.id)} style={{
-              display: "flex", alignItems: "center", gap: "10px", background: "#f9f9fb",
-              borderRadius: "8px", padding: "8px 12px", cursor: "pointer",
-              opacity: r.done ? 0.4 : 1, transition: "opacity 0.2s",
-              borderLeft: `3px solid ${r.done ? "#ccc" : "#d97706"}`,
-            }}>
-              <div style={{
-                width: "18px", height: "18px", borderRadius: "50%",
-                border: `2px solid ${r.done ? "#ccc" : "#d97706"}`,
-                background: r.done ? "#ccc" : "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                {r.done && <span style={{ fontSize: "10px", color: "#fff" }}>✓</span>}
-              </div>
-              <span style={{ fontSize: "13px", textDecoration: r.done ? "line-through" : "none", color: r.done ? "#aaa" : "#1a1a2e" }}>{r.title}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ fontSize: "10px", color: "#bbb", marginTop: "10px", textAlign: "center" }}>タップで完了/未完了を切替</div>
-      </div>
-    </div>
-  );
-}
 
-const navBtnStyle = {
-  background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)", color: "#1a1a2e",
-  borderRadius: "8px", width: "32px", height: "32px", fontSize: "18px", cursor: "pointer",
-  display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
-};
+        {/* 追加フォーム */}
+        <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
+          <input
+            value={newReminder}
+            onChange={e => setNewReminder(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && addReminder()}
+            placeholder="新しいリマインダーを追加..."
+            style={{
+              flex: 1, padding: "7px 10px", fontSize: "13px",
+              border: "1px solid #e0e0e0", borderRadius: "8px",
+              outline: "none", color: "#1a1a2e",
+            }}
+          />
+          <button onClick={addReminder} style={{
+            background: "#d97706", color: "#fff", border: "none",
+            borderRadius: "8px", padding: "7px 14px", fontSize: "13px",
+            fontWeight: "700", cursor: "pointer",
+          }}>追加</button>
+        </
